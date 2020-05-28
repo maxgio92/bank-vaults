@@ -25,6 +25,7 @@ import (
 
 	"emperror.dev/errors"
 	"github.com/aws/aws-sdk-go/aws"
+    "github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecr"
 	dockerTypes "github.com/docker/docker/api/types"
@@ -399,8 +400,12 @@ func (k *ContainerInfo) Collect(container *corev1.Container, podSpec *corev1.Pod
 					RegistryIds: []*string{aws.String(ecrRegistryID)},
 				}
 
-				resp, err := svc.GetAuthorizationToken(&req)
+				resp, err := svc.GetAuthorizationToken(&req) // here
+
 				if err != nil {
+                    if awsErr, ok := err.(awserr.Error); ok {
+                        logger.Infof("AWS ERROR: %s", awsErr.Message())
+                    }
 					logger.Infof("Failed to get AWS ECR Token, trying with no credentials")
 					return nil
 				}
